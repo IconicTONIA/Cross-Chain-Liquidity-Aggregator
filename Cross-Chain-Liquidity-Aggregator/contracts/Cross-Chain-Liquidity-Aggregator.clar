@@ -642,7 +642,7 @@
   )
 )
 
-;; 3. YIELD FARMING & STAKING
+;; YIELD FARMING & STAKING
 (define-public (create-farming-pool
   (name (string-ascii 32))
   (staking-token principal)
@@ -676,5 +676,36 @@
     
     (var-set next-farm-id (+ farm-id u1))
     (ok farm-id)
+  )
+)
+
+(define-public (stake-in-farm (farm-id uint) (amount uint) (lock-period uint))
+  (let
+    (
+      (farm (unwrap! (map-get? farming-pools { farm-id: farm-id }) ERR-POOL-NOT-FOUND))
+      (current-stake (default-to { staked-amount: u0, reward-debt: u0, last-stake-time: u0, lock-end-time: u0 }
+                      (map-get? user-stakes { user: tx-sender, farm-id: farm-id })))
+    )
+    (asserts! (get is-active farm) ERR-FARMING-NOT-ACTIVE)
+    (asserts! (> amount u0) ERR-INVALID-AMOUNT)
+    (asserts! (<= stacks-block-height (get end-time farm)) ERR-DEADLINE-PASSED)
+    
+    (map-set user-stakes
+      { user: tx-sender, farm-id: farm-id }
+      {
+        staked-amount: (+ (get staked-amount current-stake) amount),
+        reward-debt: u0,
+        last-stake-time: stacks-block-height,
+        lock-end-time: (+ stacks-block-height lock-period)
+      }
+    )
+    
+    (map-set farming-pools
+      { farm-id: farm-id }
+      (merge farm { total-staked: (+ (get total-staked farm) amount) })
+    )
+    
+    (var-set total-staked-tokens (+ (var-get total-staked-tokens) amount))
+    (ok amount)
   )
 )
