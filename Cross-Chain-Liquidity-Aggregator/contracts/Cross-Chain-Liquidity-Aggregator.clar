@@ -66,3 +66,23 @@
   }
 )
 
+(define-map route-configuration
+  { route-id: uint }
+  {
+    name: (string-ascii 32),
+    path: (list 10 uint),
+    is-optimized: bool
+  }
+)
+
+(define-map user-referrals
+  { user: principal }
+  { referrer: principal, fees-earned: uint }
+)
+
+(define-map token-whitelist
+  { token: principal }
+  { is-whitelisted: bool, decimals: uint }
+)
+
+
