@@ -41,3 +41,28 @@
     yield-strategy-id: (optional uint)
   }
 )
+
+(define-map pool-providers
+  { pool-id: uint, provider: principal }
+  { liquidity-tokens: uint }
+)
+
+(define-map user-deposits
+  { user: principal, token: principal }
+  { amount: uint, last-deposit-time: uint }
+)
+
+(define-map yield-strategies
+  { strategy-id: uint }
+  {
+    name: (string-ascii 32),
+    target-token: principal,
+    apy-estimate: uint,
+    risk-level: uint,
+    is-active: bool,
+    protocol: (string-ascii 32),
+    min-lock-period: uint,
+    rewards-token: (optional principal)
+  }
+)
+
