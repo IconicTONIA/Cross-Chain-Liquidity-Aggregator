@@ -513,3 +513,62 @@
 (define-data-var next-nft-id uint u1)
 (define-data-var next-bridge-tx-id uint u1)
 (define-data-var next-oracle-feed-id uint u1)
+
+;; LENDING & BORROWING SYSTEM
+(define-public (create-lending-pool 
+  (token principal) 
+  (collateral-factor uint) 
+  (liquidation-threshold uint)
+)
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    (asserts! (is-token-whitelisted token) ERR-INVALID-TOKEN)
+    (asserts! (<= collateral-factor u8000) ERR-INVALID-AMOUNT) ;; Max 80% collateral factor
+    (asserts! (<= liquidation-threshold u9000) ERR-INVALID-AMOUNT) ;; Max 90% liquidation threshold
+    
+    (map-set lending-pools
+      { token: token }
+      {
+        total-supplied: u0,
+        total-borrowed: u0,
+        supply-rate: u500, ;; 5% default
+        borrow-rate: u800, ;; 8% default
+        collateral-factor: collateral-factor,
+        liquidation-threshold: liquidation-threshold,
+        is-active: true
+      }
+    )
+    (ok token)
+  )
+)
+
+
+(define-public (supply-to-lending-pool (token principal) (amount uint))
+  (let
+    (
+      (pool (unwrap! (map-get? lending-pools { token: token }) ERR-POOL-NOT-FOUND))
+      (current-supply (default-to { amount: u0, earned-interest: u0, last-update-time: u0 } 
+                       (map-get? user-supplies { user: tx-sender, token: token })))
+    )
+    (asserts! (get is-active pool) ERR-PROTOCOL-PAUSED)
+    (asserts! (> amount u0) ERR-INVALID-AMOUNT)
+    
+    ;; Update user supply
+    (map-set user-supplies
+      { user: tx-sender, token: token }
+      {
+        amount: (+ (get amount current-supply) amount),
+        earned-interest: (get earned-interest current-supply),
+        last-update-time: stacks-block-height
+      }
+    )
+    
+    ;; Update pool totals
+    (map-set lending-pools
+      { token: token }
+      (merge pool { total-supplied: (+ (get total-supplied pool) amount) })
+    )
+    
+    (ok amount)
+  )
+)
