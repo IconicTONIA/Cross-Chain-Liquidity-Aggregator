@@ -349,3 +349,25 @@
     last-update-time: uint
   }
 )
+
+(define-map price-oracles
+  { token: principal }
+  {
+    price: uint,
+    decimals: uint,
+    last-update-time: uint,
+    oracle-address: principal,
+    is-active: bool
+  }
+)
+
+(define-map oracle-feeds
+  { feed-id: uint }
+  {
+    name: (string-ascii 32),
+    token: principal,
+    data-source: (string-ascii 64),
+    update-frequency: uint,
+    is-verified: bool
+  }
+)
