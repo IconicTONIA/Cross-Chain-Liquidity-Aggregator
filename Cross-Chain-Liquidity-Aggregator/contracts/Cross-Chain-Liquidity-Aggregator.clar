@@ -372,7 +372,7 @@
   }
 )
 
-;; 3. YIELD FARMING & STAKING
+;; YIELD FARMING & STAKING
 (define-map farming-pools
   { farm-id: uint }
   {
@@ -394,5 +394,29 @@
     reward-debt: uint,
     last-stake-time: uint,
     lock-end-time: uint
+  }
+)
+
+(define-map governance-proposals
+  { proposal-id: uint }
+  {
+    title: (string-ascii 64),
+    description: (string-ascii 256),
+    proposer: principal,
+    voting-start: uint,
+    voting-end: uint,
+    votes-for: uint,
+    votes-against: uint,
+    executed: bool,
+    proposal-type: uint
+  }
+)
+
+(define-map user-votes
+  { user: principal, proposal-id: uint }
+  {
+    vote: bool,
+    voting-power: uint,
+    timestamp: uint
   }
 )
