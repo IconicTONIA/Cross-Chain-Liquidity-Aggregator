@@ -190,3 +190,22 @@
   )
 )
 
+(define-read-only (get-route (route-id uint))
+  (map-get? route-configuration { route-id: route-id })
+)
+
+(define-private (calculate-output-for-pool (pool-id uint) (prev-amount uint))
+  (let
+    (
+      (pool (unwrap-panic (map-get? liquidity-pools { pool-id: pool-id })))
+      (reserve-a (get reserve-a pool))
+      (reserve-b (get reserve-b pool))
+      (fee-bps (get fee-bps pool))
+      (amount-in-with-fee (* prev-amount (- u10000 fee-bps)))
+      (numerator (* amount-in-with-fee reserve-b))
+      (denominator (+ (* reserve-a u10000) amount-in-with-fee))
+    )
+    (/ numerator denominator)
+  )
+)
+
