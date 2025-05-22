@@ -371,3 +371,28 @@
     is-verified: bool
   }
 )
+
+;; 3. YIELD FARMING & STAKING
+(define-map farming-pools
+  { farm-id: uint }
+  {
+    name: (string-ascii 32),
+    staking-token: principal,
+    reward-token: principal,
+    total-staked: uint,
+    reward-rate: uint,
+    start-time: uint,
+    end-time: uint,
+    is-active: bool
+  }
+)
+
+(define-map user-stakes
+  { user: principal, farm-id: uint }
+  {
+    staked-amount: uint,
+    reward-debt: uint,
+    last-stake-time: uint,
+    lock-end-time: uint
+  }
+)
