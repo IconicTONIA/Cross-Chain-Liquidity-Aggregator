@@ -131,3 +131,18 @@
   )
 )
 
+;; Token whitelist management
+(define-public (whitelist-token (token principal) (decimals uint))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    (ok (map-set token-whitelist { token: token } { is-whitelisted: true, decimals: decimals }))
+  )
+)
+
+(define-public (remove-token-from-whitelist (token principal))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    (ok (map-set token-whitelist { token: token } { is-whitelisted: false, decimals: u0 }))
+  )
+)
+
