@@ -146,3 +146,17 @@
   )
 )
 
+(define-read-only (is-token-whitelisted (token principal))
+  (default-to false (get is-whitelisted (map-get? token-whitelist { token: token })))
+)
+
+;; Pool management functions
+(define-read-only (get-pool (pool-id uint))
+  (map-get? liquidity-pools { pool-id: pool-id })
+)
+
+(define-read-only (get-pool-count)
+  (- (var-get next-pool-id) u1)
+)
+
+
