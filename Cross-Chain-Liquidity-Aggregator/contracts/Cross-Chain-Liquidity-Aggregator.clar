@@ -457,7 +457,7 @@
   }
 )
 
-;; 6. NFT COLLATERAL SYSTEM
+;; NFT COLLATERAL SYSTEM
 (define-map nft-collateral
   { nft-id: uint }
   {
@@ -467,5 +467,39 @@
     appraised-value: uint,
     is-collateralized: bool,
     loan-id: (optional uint)
+  }
+)
+
+(define-map nft-collections
+  { collection: principal }
+  {
+    floor-price: uint,
+    is-approved: bool,
+    collateral-factor: uint,
+    last-price-update: uint
+  }
+)
+
+;; CROSS-CHAIN BRIDGE SYSTEM
+(define-map bridge-transactions
+  { tx-id: uint }
+  {
+    sender: principal,
+    recipient: (buff 20),
+    token: principal,
+    amount: uint,
+    target-chain: uint,
+    status: uint,
+    created-at: uint,
+    completed-at: (optional uint)
+  }
+)
+(define-map supported-chains
+  { chain-id: uint }
+  {
+    name: (string-ascii 32),
+    is-active: bool,
+    bridge-fee-bps: uint,
+    confirmation-blocks: uint
   }
 )
