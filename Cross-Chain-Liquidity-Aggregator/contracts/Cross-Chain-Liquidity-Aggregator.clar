@@ -116,3 +116,18 @@
   )
 )
 
+(define-public (set-referral-fee (fee-bps uint))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    (asserts! (<= fee-bps u500) ERR-INVALID-FEE-BPS) ;; Max 5% referral fee
+    (ok (var-set referral-fee-bps fee-bps))
+  )
+)
+
+(define-public (set-treasury-address (new-address principal))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    (ok (var-set treasury-address new-address))
+  )
+)
+
