@@ -209,3 +209,214 @@
   )
 )
 
+;; Yield strategy functions
+(define-public (create-yield-strategy
+  (name (string-ascii 32))
+  (target-token principal)
+  (apy-estimate uint)
+  (risk-level uint)
+  (protocol (string-ascii 32))
+  (min-lock-period uint)
+  (rewards-token (optional principal))
+)
+  (let
+    (
+      (strategy-id (var-get next-strategy-id))
+    )
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    (asserts! (is-token-whitelisted target-token) ERR-INVALID-TOKEN)
+    (asserts! (<= risk-level u10) ERR-INVALID-AMOUNT) ;; Risk scale from 0-10
+    
+    (map-set yield-strategies
+      { strategy-id: strategy-id }
+      {
+        name: name,
+        target-token: target-token,
+        apy-estimate: apy-estimate,
+        risk-level: risk-level,
+        is-active: true,
+        protocol: protocol,
+        min-lock-period: min-lock-period,
+        rewards-token: rewards-token
+      }
+    )
+    
+    (var-set next-strategy-id (+ strategy-id u1))
+    (ok strategy-id)
+  )
+)
+
+(define-read-only (get-yield-strategy (strategy-id uint))
+  (map-get? yield-strategies { strategy-id: strategy-id })
+)
+
+(define-public (update-yield-strategy-apy (strategy-id uint) (new-apy-estimate uint))
+  (let
+    (
+      (strategy (unwrap! (map-get? yield-strategies { strategy-id: strategy-id }) ERR-YIELD-STRATEGY-NOT-FOUND))
+    )
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    
+    (map-set yield-strategies
+      { strategy-id: strategy-id }
+      (merge strategy { apy-estimate: new-apy-estimate })
+    )
+    (ok new-apy-estimate)
+  )
+)
+
+(define-public (set-yield-strategy-active (strategy-id uint) (is-active bool))
+  (let
+    (
+      (strategy (unwrap! (map-get? yield-strategies { strategy-id: strategy-id }) ERR-YIELD-STRATEGY-NOT-FOUND))
+    )
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    
+    (map-set yield-strategies
+      { strategy-id: strategy-id }
+      (merge strategy { is-active: is-active })
+    )
+    (ok is-active)
+  )
+)
+
+;; User position and analytics functions
+(define-read-only (get-user-liquidity-position (user principal) (pool-id uint))
+  (map-get? pool-providers { pool-id: pool-id, provider: user })
+)
+
+(define-read-only (get-user-deposit (user principal) (token principal))
+  (map-get? user-deposits { user: user, token: token })
+)
+
+;; NEW ERROR CONSTANTS
+(define-constant ERR-LOAN-NOT-FOUND (err u115))
+(define-constant ERR-INSUFFICIENT-COLLATERAL (err u116))
+(define-constant ERR-LIQUIDATION-THRESHOLD-REACHED (err u117))
+(define-constant ERR-ORACLE-NOT-FOUND (err u118))
+(define-constant ERR-STALE-PRICE (err u119))
+(define-constant ERR-FARMING-NOT-ACTIVE (err u120))
+(define-constant ERR-LOCK-PERIOD-NOT-EXPIRED (err u121))
+(define-constant ERR-GOVERNANCE-PROPOSAL-NOT-FOUND (err u122))
+(define-constant ERR-VOTING-PERIOD-ENDED (err u123))
+(define-constant ERR-INSUFFICIENT-VOTING-POWER (err u124))
+(define-constant ERR-INSURANCE-CLAIM-REJECTED (err u125))
+(define-constant ERR-NFT-NOT-FOUND (err u126))
+(define-constant ERR-CROSS-CHAIN-BRIDGE-PAUSED (err u127))
+
+;; NEW DATA VARIABLES
+(define-data-var total-loans-issued uint u0)
+(define-data-var total-collateral-locked uint u0)
+(define-data-var governance-proposal-counter uint u0)
+(define-data-var total-staked-tokens uint u0)
+(define-data-var insurance-pool-balance uint u0)
+(define-data-var cross-chain-nonce uint u0)
+
+;; NEW MAPS
+(define-map lending-pools
+  { token: principal }
+  {
+    total-supplied: uint,
+    total-borrowed: uint,
+    supply-rate: uint,
+    borrow-rate: uint,
+    collateral-factor: uint,
+    liquidation-threshold: uint,
+    is-active: bool
+  }
+)
+
+(define-map user-loans
+  { loan-id: uint }
+  {
+    borrower: principal,
+    collateral-token: principal,
+    collateral-amount: uint,
+    borrowed-token: principal,
+    borrowed-amount: uint,
+    interest-rate: uint,
+    liquidation-price: uint,
+    creation-time: uint,
+    is-active: bool
+  }
+)
+
+(define-map user-supplies
+  { user: principal, token: principal }
+  {
+    amount: uint,
+    earned-interest: uint,
+    last-update-time: uint
+  }
+)
+
+(define-map price-oracles
+  { token: principal }
+  {
+    price: uint,
+    decimals: uint,
+    last-update-time: uint,
+    oracle-address: principal,
+    is-active: bool
+  }
+)
+
+(define-map oracle-feeds
+  { feed-id: uint }
+  {
+    name: (string-ascii 32),
+    token: principal,
+    data-source: (string-ascii 64),
+    update-frequency: uint,
+    is-verified: bool
+  }
+)
+
+;; YIELD FARMING & STAKING
+(define-map farming-pools
+  { farm-id: uint }
+  {
+    name: (string-ascii 32),
+    staking-token: principal,
+    reward-token: principal,
+    total-staked: uint,
+    reward-rate: uint,
+    start-time: uint,
+    end-time: uint,
+    is-active: bool
+  }
+)
+
+(define-map user-stakes
+  { user: principal, farm-id: uint }
+  {
+    staked-amount: uint,
+    reward-debt: uint,
+    last-stake-time: uint,
+    lock-end-time: uint
+  }
+)
+
+(define-map governance-proposals
+  { proposal-id: uint }
+  {
+    title: (string-ascii 64),
+    description: (string-ascii 256),
+    proposer: principal,
+    voting-start: uint,
+    voting-end: uint,
+    votes-for: uint,
+    votes-against: uint,
+    executed: bool,
+    proposal-type: uint
+  }
+)
+
+(define-map user-votes
+  { user: principal, proposal-id: uint }
+  {
+    vote: bool,
+    voting-power: uint,
+    timestamp: uint
+  }
+)
