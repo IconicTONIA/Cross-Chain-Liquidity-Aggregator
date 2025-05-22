@@ -503,3 +503,13 @@
     confirmation-blocks: uint
   }
 )
+
+;; NEW COUNTERS
+(define-data-var next-loan-id uint u1)
+(define-data-var next-farm-id uint u1)
+(define-data-var next-proposal-id uint u1)
+(define-data-var next-policy-id uint u1)
+(define-data-var next-claim-id uint u1)
+(define-data-var next-nft-id uint u1)
+(define-data-var next-bridge-tx-id uint u1)
+(define-data-var next-oracle-feed-id uint u1)
